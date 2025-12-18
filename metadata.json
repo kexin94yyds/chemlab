@@ -1,0 +1,7 @@
+{
+  "name": "ChemLab 智囊 (ChemLab Intelligence)",
+  "description": "A comprehensive digital companion for chemists featuring an Electronic Lab Notebook (ELN), Intelligent Calculator, MSDS Safety Search, and Inventory Management.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
