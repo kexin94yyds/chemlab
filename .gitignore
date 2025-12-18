@@ -11,6 +11,8 @@ node_modules
 dist
 dist-ssr
 *.local
+.cunzhi-knowledge
+.cunzhi-memory
 
 # Editor directories and files
 .vscode/*
