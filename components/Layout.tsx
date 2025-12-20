@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { ModuleType } from '../types';
 import { Beaker, BookOpen, Calculator, ShieldAlert, Library, Home } from 'lucide-react';
@@ -21,18 +20,18 @@ const Layout: React.FC<LayoutProps> = ({ children, activeModule, setActiveModule
   return (
     <div className="min-h-screen flex flex-col bg-slate-50">
       <header className="bg-indigo-700 text-white shadow-lg sticky top-0 z-50">
-        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
+        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <Beaker className="w-8 h-8 text-indigo-200" />
+            <Beaker className="w-7 h-7 text-indigo-200" />
             <div className="flex flex-col">
-              <h1 className="text-xl font-bold leading-none">ChemLab 智囊</h1>
-              <span className="text-[10px] text-indigo-200/70 mt-1 uppercase tracking-widest font-bold">Research Assistant</span>
+              <h1 className="text-lg font-bold leading-none">ChemLab 智囊</h1>
+              <span className="text-[9px] text-indigo-200/70 mt-0.5 uppercase tracking-widest font-bold">Research Assistant</span>
             </div>
           </div>
         </div>
       </header>
 
-      <main className="flex-1 max-w-4xl mx-auto w-full px-4 py-6 mb-20">
+      <main className="flex-1 max-w-4xl mx-auto w-full px-4 py-4 pb-24">
         {children}
       </main>
 
@@ -53,6 +52,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeModule, setActiveModule
             </button>
           ))}
         </div>
+        <div style={{ height: 'env(safe-area-inset-bottom)' }} />
       </nav>
     </div>
   );
