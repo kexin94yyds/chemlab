@@ -1,6 +1,6 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
-import { SafetyInfo, Reagent, Standard } from "../types";
+import { SafetyInfo, Reagent, Standard, SafetySummary } from "../types";
 
 const getAI = () => new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
 
@@ -72,7 +72,12 @@ export const getSafetyDetails = async (query: string): Promise<SafetyInfo | null
   const ai = getAI();
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
-    contents: `Find GHS safety information and MSDS highlights for: ${query}.`,
+    contents: `Find GHS safety information and MSDS highlights for: ${query}. 
+    Please also provide details on:
+    1. Environmental impact (how to dispose safely, potential pollution).
+    2. Personnel safety (PPE required, health risks).
+    3. Equipment safety (compatibility with glass/metal, storage conditions).
+    Return results in Chinese.`,
     config: {
       responseMimeType: "application/json",
       responseSchema: {
@@ -81,7 +86,10 @@ export const getSafetyDetails = async (query: string): Promise<SafetyInfo | null
           name: { type: Type.STRING },
           ghsSignals: { type: Type.ARRAY, items: { type: Type.STRING } },
           hazards: { type: Type.ARRAY, items: { type: Type.STRING } },
-          precautions: { type: Type.STRING }
+          precautions: { type: Type.STRING },
+          environmentalImpact: { type: Type.STRING },
+          personnelSafety: { type: Type.STRING },
+          equipmentSafety: { type: Type.STRING }
         },
         required: ["name", "ghsSignals", "hazards", "precautions"]
       }
@@ -95,26 +103,42 @@ export const getSafetyDetails = async (query: string): Promise<SafetyInfo | null
   }
 };
 
-export const checkCompatibility = async (reagents: string[]): Promise<string | null> => {
+export const checkCompatibility = async (reagents: string[]): Promise<{ warning: string | null; summary?: SafetySummary } | null> => {
   if (reagents.length < 2) return null;
   const ai = getAI();
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
-    contents: `Check for dangerous chemical incompatibilities between: ${reagents.join(', ')}.`,
+    contents: `请对以下试剂进行深度安全评估：${reagents.join(', ')}。
+    
+    1. 检查它们之间是否存在危险的化学禁忌（混合风险）。如果有，请在 "warning" 字段中用中文进行预警。
+    2. 生成一份详尽的 "试剂安全评估总结报告" (Safety Assessment Summary Report)，必须严格包含以下三个部分，且全部使用中文：
+       - 环境污染与处置 (Environmental Impact)：说明对环境的潜在威胁及实验室端的专业处置建议。
+       - 人员防护 (Personnel Safety)：说明必须佩戴的防护装备 (PPE) 及对人员健康的具体危害与急救建议。
+       - 仪器设备注意事项 (Equipment Safety)：说明试剂对玻璃、金属等实验仪器的腐蚀性、存储禁忌及操作细节。
+    
+    请确保内容专业、准确，基于标准的实验室安全协议，严禁产生幻觉。`,
     config: {
       responseMimeType: "application/json",
       responseSchema: {
         type: Type.OBJECT,
         properties: {
-          warning: { type: Type.STRING }
+          warning: { type: Type.STRING },
+          summary: {
+            type: Type.OBJECT,
+            properties: {
+              environmental: { type: Type.STRING },
+              personnel: { type: Type.STRING },
+              equipment: { type: Type.STRING }
+            },
+            required: ["environmental", "personnel", "equipment"]
+          }
         }
       }
     }
   });
 
   try {
-    const data = JSON.parse(response.text);
-    return data.warning || null;
+    return JSON.parse(response.text);
   } catch (e) {
     return null;
   }

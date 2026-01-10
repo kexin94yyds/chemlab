@@ -4,7 +4,8 @@ export enum ModuleType {
   ELN = 'eln',
   CALCULATOR = 'calculator',
   SAFETY = 'safety',
-  LIBRARY = 'library'
+  LIBRARY = 'library',
+  WORKFLOW = 'workflow'
 }
 
 export interface Reagent extends ChemicalProperties {
@@ -46,4 +47,13 @@ export interface SafetyInfo {
   ghsSignals: string[];
   hazards: string[];
   precautions: string;
+  environmentalImpact?: string; // 环境污染
+  personnelSafety?: string;    // 人员防护
+  equipmentSafety?: string;    // 仪器设备注意事项
+}
+
+export interface SafetySummary {
+  environmental: string;
+  personnel: string;
+  equipment: string;
 }

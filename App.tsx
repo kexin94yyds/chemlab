@@ -7,6 +7,7 @@ import ELN from './views/ELN';
 import Calculator from './views/Calculator';
 import MSDS from './views/MSDS';
 import LibraryView from './views/Library';
+import Workflow from './views/Workflow';
 
 const App: React.FC = () => {
   const [activeModule, setActiveModule] = useState<ModuleType>(ModuleType.HOME);
@@ -23,6 +24,8 @@ const App: React.FC = () => {
         return <ELN />;
       case ModuleType.SAFETY:
         return <MSDS />;
+      case ModuleType.WORKFLOW:
+        return <Workflow />;
       default:
         return <Home onNavigate={setActiveModule} />;
     }

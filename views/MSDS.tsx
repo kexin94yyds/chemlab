@@ -6,7 +6,8 @@ import {
   Info, Sparkles, FileText, CheckCircle, AlertCircle
 } from 'lucide-react';
 import { getSafetyDetails, checkCompatibility } from '../services/geminiService';
-import { SafetyInfo } from '../types';
+import { getLocalSafetyInfo } from '../data/safetyDb';
+import { SafetyInfo, SafetySummary } from '../types';
 
 const MSDS: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'chemical' | 'assessment'>('chemical');
@@ -17,7 +18,9 @@ const MSDS: React.FC = () => {
   // Reagent compatibility check
   const [reagentsForCheck, setReagentsForCheck] = useState<string>('');
   const [compatWarning, setCompatWarning] = useState<string | null>(null);
+  const [safetySummary, setSafetySummary] = useState<SafetySummary | null>(null);
   const [checkingCompat, setCheckingCompat] = useState(false);
+  const [batchSafetyInfoList, setBatchSafetyInfoList] = useState<SafetyInfo[]>([]);
 
   // Student Self-Assessment State
   const [experimentDesc, setExperimentDesc] = useState('');
@@ -38,17 +41,60 @@ const MSDS: React.FC = () => {
   const handleSearch = async () => {
     if (!query.trim()) return;
     setLoading(true);
+    
+    // 优先从本地数据库获取
+    const localData = getLocalSafetyInfo(query);
+    if (localData) {
+      setSafetyInfo(localData);
+      setLoading(false);
+      return;
+    }
+
+    // 本地没有则调用 AI
     const data = await getSafetyDetails(query);
     setSafetyInfo(data);
     setLoading(false);
   };
 
   const handleCompatCheck = async () => {
-    const list = reagentsForCheck.split(/[,，\n]/).map(s => s.trim()).filter(s => s.length > 0);
-    if (list.length < 2) return;
+    const list = reagentsForCheck.split(/[,，、\n]/).map(s => s.trim()).filter(s => s.length > 0);
+    if (list.length < 1) return;
     setCheckingCompat(true);
-    const warning = await checkCompatibility(list);
-    setCompatWarning(warning);
+    setBatchSafetyInfoList([]);
+    setCompatWarning(null);
+    setSafetySummary(null);
+
+    // 批量获取每个试剂的安全信息
+    const safetyResults: SafetyInfo[] = [];
+    for (const reagent of list) {
+      const localData = getLocalSafetyInfo(reagent);
+      if (localData) {
+        safetyResults.push(localData);
+      } else {
+        try {
+          const aiData = await getSafetyDetails(reagent);
+          if (aiData) safetyResults.push(aiData);
+        } catch (e) {
+          console.error(`获取 ${reagent} 安全信息失败`, e);
+        }
+      }
+    }
+    setBatchSafetyInfoList(safetyResults);
+
+    // 如果有多个试剂，检查混合风险并生成总结报告
+    if (list.length >= 2) {
+      try {
+        const result = await checkCompatibility(list);
+        if (result) {
+          setCompatWarning(result.warning || null);
+          if (result.summary) {
+            setSafetySummary(result.summary);
+          }
+        }
+      } catch (e) {
+        console.error('混合风险检查失败', e);
+      }
+    }
     setCheckingCompat(false);
   };
 
@@ -154,6 +200,40 @@ const MSDS: React.FC = () => {
                     </p>
                   </div>
                 </div>
+
+                {/* 扩展安全维度：环境、人员、设备 */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {safetyInfo.environmentalImpact && (
+                    <div className="bg-blue-50/50 p-5 rounded-[2rem] border border-blue-100">
+                      <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-3 flex items-center">
+                        <Wind className="w-3.5 h-3.5 mr-2" /> 环境污染与处置
+                      </p>
+                      <p className="text-xs text-blue-900 leading-relaxed font-medium">
+                        {safetyInfo.environmentalImpact}
+                      </p>
+                    </div>
+                  )}
+                  {safetyInfo.personnelSafety && (
+                    <div className="bg-amber-50/50 p-5 rounded-[2rem] border border-amber-100">
+                      <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-3 flex items-center">
+                        <UserCheck className="w-3.5 h-3.5 mr-2" /> 人员防护要点
+                      </p>
+                      <p className="text-xs text-amber-900 leading-relaxed font-medium">
+                        {safetyInfo.personnelSafety}
+                      </p>
+                    </div>
+                  )}
+                  {safetyInfo.equipmentSafety && (
+                    <div className="bg-slate-50/50 p-5 rounded-[2rem] border border-slate-200">
+                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 flex items-center">
+                        <Thermometer className="w-3.5 h-3.5 mr-2" /> 仪器设备注意事项
+                      </p>
+                      <p className="text-xs text-slate-900 leading-relaxed font-medium">
+                        {safetyInfo.equipmentSafety}
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -187,6 +267,101 @@ const MSDS: React.FC = () => {
                     <p className="text-sm leading-relaxed font-medium">{compatWarning}</p>
                   </div>
                 </div>
+              </div>
+            )}
+
+            {/* 评估总结报告区域 */}
+            {safetySummary && (
+              <div className="mt-6 p-8 bg-slate-900 rounded-[2.5rem] text-white shadow-2xl animate-in fade-in slide-in-from-bottom-4">
+                <div className="flex items-center space-x-3 mb-6">
+                  <div className="p-2 bg-indigo-500 rounded-xl">
+                    <ClipboardCheck className="w-6 h-6 text-white" />
+                  </div>
+                  <h4 className="text-xl font-black tracking-tight">🧪 试剂安全评估总结报告</h4>
+                </div>
+
+                <div className="space-y-6">
+                  <div>
+                    <h5 className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-2 flex items-center">
+                      <Wind className="w-3.5 h-3.5 mr-2" /> 1. 环境污染与处置 (Environmental Impact)
+                    </h5>
+                    <p className="text-sm text-slate-300 leading-relaxed font-medium pl-5.5 border-l-2 border-blue-500/30">
+                      {safetySummary.environmental}
+                    </p>
+                  </div>
+
+                  <div>
+                    <h5 className="text-[10px] font-black text-amber-400 uppercase tracking-widest mb-2 flex items-center">
+                      <UserCheck className="w-3.5 h-3.5 mr-2" /> 2. 人员防护 (Personnel Safety)
+                    </h5>
+                    <p className="text-sm text-slate-300 leading-relaxed font-medium pl-5.5 border-l-2 border-amber-500/30">
+                      {safetySummary.personnel}
+                    </p>
+                  </div>
+
+                  <div>
+                    <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center">
+                      <Thermometer className="w-3.5 h-3.5 mr-2" /> 3. 仪器设备注意事项 (Equipment Safety)
+                    </h5>
+                    <p className="text-sm text-slate-300 leading-relaxed font-medium pl-5.5 border-l-2 border-slate-500/30">
+                      {safetySummary.equipment}
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="mt-6 pt-6 border-t border-white/10 flex items-center justify-between">
+                  <p className="text-[9px] font-bold text-white/40 uppercase tracking-widest">
+                    <Info className="w-3 h-3 inline mr-1" /> 基于标准实验室安全协议生成
+                  </p>
+                  <Sparkles className="w-4 h-4 text-indigo-400 animate-pulse" />
+                </div>
+              </div>
+            )}
+
+            {/* 批量试剂安全信息展示 */}
+            {batchSafetyInfoList.length > 0 && (
+              <div className="mt-6 space-y-4">
+                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">各试剂安全详情</h4>
+                {batchSafetyInfoList.map((info, idx) => (
+                  <div key={idx} className="p-5 bg-slate-50 rounded-[2rem] border border-slate-200 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h5 className="font-black text-slate-800">{info.name}</h5>
+                      <div className="flex flex-wrap gap-1">
+                        {info.ghsSignals.map((sig, i) => (
+                          <span key={i} className="px-2 py-0.5 bg-rose-500 text-white text-[9px] font-black rounded-full">
+                            {sig}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      {info.environmentalImpact && (
+                        <div className="p-3 bg-blue-50 rounded-xl border border-blue-100">
+                          <p className="text-[9px] font-black text-blue-500 uppercase mb-1 flex items-center">
+                            <Wind className="w-3 h-3 mr-1" /> 环境
+                          </p>
+                          <p className="text-[11px] text-blue-900 leading-relaxed">{info.environmentalImpact}</p>
+                        </div>
+                      )}
+                      {info.personnelSafety && (
+                        <div className="p-3 bg-amber-50 rounded-xl border border-amber-100">
+                          <p className="text-[9px] font-black text-amber-600 uppercase mb-1 flex items-center">
+                            <UserCheck className="w-3 h-3 mr-1" /> 人员
+                          </p>
+                          <p className="text-[11px] text-amber-900 leading-relaxed">{info.personnelSafety}</p>
+                        </div>
+                      )}
+                      {info.equipmentSafety && (
+                        <div className="p-3 bg-slate-100 rounded-xl border border-slate-200">
+                          <p className="text-[9px] font-black text-slate-500 uppercase mb-1 flex items-center">
+                            <Thermometer className="w-3 h-3 mr-1" /> 设备
+                          </p>
+                          <p className="text-[11px] text-slate-700 leading-relaxed">{info.equipmentSafety}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>

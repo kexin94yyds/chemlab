@@ -38,6 +38,14 @@ const Home: React.FC<HomeProps> = ({ onNavigate }) => {
       icon: ShieldAlert,
       color: 'bg-rose-500',
     },
+    {
+      type: ModuleType.WORKFLOW,
+      title: '智能实验流程',
+      desc: '莫尔法测定涂料氯离子，全流程数字化引导。',
+      icon: Zap,
+      color: 'bg-amber-500',
+      label: 'New'
+    },
   ];
 
   return (
