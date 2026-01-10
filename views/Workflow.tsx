@@ -304,19 +304,27 @@ const Workflow: React.FC = () => {
 
         {titrationData.isStandardizing ? (
           <div className="space-y-6">
-            <div className="p-6 bg-amber-50 rounded-[2rem] border border-amber-100 relative overflow-hidden">
-               <Calculator className="absolute top-2 right-2 w-12 h-12 text-amber-200/50" />
-               <h4 className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-4">硝酸银标定公式 (Standardization)</h4>
-               <div className="flex flex-col items-center justify-center p-6 bg-white/50 rounded-xl border border-white/80 mb-4">
-                  <p className="text-2xl font-black text-amber-900 mb-4">c = m / (M × (V - V₀)) × 1000</p>
-                  <div className="grid grid-cols-2 gap-x-12 gap-y-2 text-[10px] text-amber-800/80 font-bold border-t border-amber-200/50 pt-4 w-full">
-                    <div className="flex justify-between"><span>m: NaCl 质量</span><span>(g)</span></div>
-                    <div className="flex justify-between"><span>M: NaCl 摩尔质量</span><span>(58.5)</span></div>
-                    <div className="flex justify-between"><span>V: AgNO₃ 滴定体积</span><span>(mL)</span></div>
-                    <div className="flex justify-between"><span>V₀: 空白滴定体积</span><span>(mL)</span></div>
-                    <div className="flex justify-between col-span-2 text-amber-600"><span>n: NaCl 物质的量 (mol)</span><span>m / M</span></div>
-                  </div>
-               </div>
+            <div className="p-8 bg-amber-50/50 rounded-[2.5rem] border border-amber-100">
+              <h4 className="text-lg font-black text-slate-800 mb-6">第一步：硝酸银标定</h4>
+              <div className="flex flex-col items-center justify-center p-8 bg-white rounded-3xl border border-amber-100 shadow-sm mb-6">
+                 <div className="flex items-center space-x-2 text-2xl font-black text-amber-900">
+                    <span>c = </span>
+                    <div className="flex flex-col items-center">
+                      <span className="border-b-2 border-amber-900 pb-1 px-4">m × 1000</span>
+                      <span className="pt-1">M × (V - V₀)</span>
+                    </div>
+                 </div>
+              </div>
+              <div className="space-y-3">
+                 <p className="text-xs font-black text-slate-500 uppercase tracking-widest">式中：</p>
+                 <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-2 text-xs font-bold text-slate-600">
+                    <li className="flex justify-between border-b border-amber-100 pb-1"><span>c: AgNO₃ 标准溶液浓度</span><span>(mol/L)</span></li>
+                    <li className="flex justify-between border-b border-amber-100 pb-1"><span>m: 氯化钠质量</span><span>(g)</span></li>
+                    <li className="flex justify-between border-b border-amber-100 pb-1"><span>V: AgNO₃ 滴定体积</span><span>(mL)</span></li>
+                    <li className="flex justify-between border-b border-amber-100 pb-1"><span>V₀: 空白滴定体积</span><span>(mL)</span></li>
+                    <li className="flex justify-between border-b border-amber-100 pb-1 col-span-2 text-amber-600"><span>M: NaCl 摩尔质量</span><span>58.5 g/mol</span></li>
+                 </ul>
+              </div>
             </div>
 
             <div className="space-y-4">
@@ -391,21 +399,30 @@ const Workflow: React.FC = () => {
           </div>
         ) : (
           <div className="space-y-6">
-            <div className="p-6 bg-indigo-50 rounded-[2rem] border border-indigo-100 relative overflow-hidden">
-               <Sparkles className="absolute top-2 right-2 w-12 h-12 text-indigo-200/50" />
-               <h4 className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-4">结果计算公式 (Result Calculation)</h4>
-               <div className="flex flex-col items-center justify-center p-6 bg-white/50 rounded-xl border border-white/80 mb-4">
-                  <p className="text-xl font-black text-indigo-900 mb-4">ω(Cl⁻) = (V - V₀) × c × 35.45 / (m × 1000) × 100%</p>
-                  <div className="grid grid-cols-2 gap-x-12 gap-y-2 text-[10px] text-indigo-800/80 font-bold border-t border-indigo-200/50 pt-4 w-full">
-                    <div className="flex justify-between"><span>V: 样品消耗 AgNO₃</span><span>(mL)</span></div>
-                    <div className="flex justify-between"><span>V₀: 空白消耗 AgNO₃</span><span>(mL)</span></div>
-                    <div className="flex justify-between"><span>c: AgNO₃ 浓度</span><span>(mol/L)</span></div>
-                    <div className="flex justify-between"><span>m: 样品质量</span><span>(g)</span></div>
-                  </div>
-               </div>
-               <p className="text-xs font-bold text-indigo-900 leading-relaxed">
+            <div className="p-8 bg-indigo-50/50 rounded-[2.5rem] border border-indigo-100">
+              <h4 className="text-lg font-black text-slate-800 mb-6">第四步：结果计算 (样品测定)</h4>
+              <div className="flex flex-col items-center justify-center p-8 bg-white rounded-3xl border border-indigo-100 shadow-sm mb-6">
+                 <div className="flex items-center space-x-2 text-2xl font-black text-indigo-900">
+                    <span>ω(Cl⁻) = </span>
+                    <div className="flex flex-col items-center">
+                      <span className="border-b-2 border-indigo-900 pb-1 px-4">(V - V₀) × c × 35.45</span>
+                      <span className="pt-1">m × 1000</span>
+                    </div>
+                    <span> × 100%</span>
+                 </div>
+              </div>
+              <div className="space-y-3">
+                 <p className="text-xs font-black text-slate-500 uppercase tracking-widest">式中：</p>
+                 <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-2 text-xs font-bold text-slate-600">
+                    <li className="flex justify-between border-b border-indigo-100 pb-1"><span>V: 样品消耗AgNO₃体积</span><span>(mL)</span></li>
+                    <li className="flex justify-between border-b border-indigo-100 pb-1"><span>V₀: 空白消耗AgNO₃体积</span><span>(mL)</span></li>
+                    <li className="flex justify-between border-b border-indigo-100 pb-1"><span>c: AgNO₃标准溶液浓度</span><span>(mol/L)</span></li>
+                    <li className="flex justify-between border-b border-indigo-100 pb-1"><span>m: 样品质量</span><span>(g)</span></li>
+                 </ul>
+              </div>
+              <p className="text-xs font-bold text-indigo-900 leading-relaxed mt-4">
                   当前标定浓度 c = <span className="underline decoration-2 underline-offset-4 font-black">{titrationData.concentration}</span> mol/L
-               </p>
+              </p>
             </div>
 
             <div className="space-y-4">
@@ -494,7 +511,30 @@ const Workflow: React.FC = () => {
           </div>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-6">
+          <div className="p-8 bg-indigo-50/50 rounded-[2.5rem] border border-indigo-100">
+            <h4 className="text-lg font-black text-slate-800 mb-6">第四步：结果计算</h4>
+            <div className="flex flex-col items-center justify-center p-8 bg-white rounded-3xl border border-indigo-100 shadow-sm mb-6">
+               <div className="flex items-center space-x-2 text-2xl font-black text-indigo-900">
+                  <span>ω(Cl⁻) = </span>
+                  <div className="flex flex-col items-center">
+                    <span className="border-b-2 border-indigo-900 pb-1 px-4">(V - V₀) × c × 35.45</span>
+                    <span className="pt-1">m × 1000</span>
+                  </div>
+                  <span> × 100%</span>
+               </div>
+            </div>
+            <div className="space-y-3">
+               <p className="text-xs font-black text-slate-500 uppercase tracking-widest">式中：</p>
+               <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-2 text-xs font-bold text-slate-600">
+                  <li className="flex justify-between border-b border-indigo-100 pb-1"><span>V: 样品消耗AgNO₃体积</span><span>(mL)</span></li>
+                  <li className="flex justify-between border-b border-indigo-100 pb-1"><span>V₀: 空白消耗AgNO₃体积</span><span>(mL)</span></li>
+                  <li className="flex justify-between border-b border-indigo-100 pb-1"><span>c: AgNO₃标准溶液浓度</span><span>(mol/L)</span></li>
+                  <li className="flex justify-between border-b border-indigo-100 pb-1"><span>m: 样品质量</span><span>(g)</span></li>
+               </ul>
+            </div>
+          </div>
+
           <div className="p-6 bg-slate-50 rounded-[2rem] border border-slate-200">
             <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 ml-1 flex items-center">
               <ClipboardList className="w-3.5 h-3.5 mr-2" /> 平行实验数据对比 (Parallel Trials)
