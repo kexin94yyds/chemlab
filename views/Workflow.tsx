@@ -78,30 +78,33 @@ const Workflow: React.FC = () => {
 
   const [titrationData, setTitrationData] = useState({
     trials: [
-      { v: '', m: '' },
-      { v: '', m: '' },
-      { v: '', m: '' }
+      { v: '' },
+      { v: '' },
+      { v: '' }
     ],
     v0: '0.05',
+    m_nacl: '0.1200',
     m_sample: '5.0',
     average: 0,
     concentration: '0.1000',
     result: 0,
     rsd: 0,
     relativeRange: 0,
+    xi: '200', // 稀释倍数
     isStandardizing: true // 是否处于标定阶段
   });
 
   const calculateStandardization = () => {
     const M = 58.44; // 氯化钠摩尔质量
     const v0 = parseFloat(titrationData.v0);
+    const xi = parseFloat(titrationData.xi) || 1;
+    const m_nacl = parseFloat(titrationData.m_nacl);
     const concentrations: number[] = [];
 
     titrationData.trials.forEach(trial => {
-      const m = parseFloat(trial.m);
       const v = parseFloat(trial.v);
-      if (m > 0 && v > v0) {
-        concentrations.push((m * 1000) / (M * (v - v0)));
+      if (m_nacl > 0 && v > v0) {
+        concentrations.push((m_nacl * 1000) / (M * (v - v0) * xi));
       }
     });
 
@@ -368,7 +371,7 @@ const Workflow: React.FC = () => {
                       <span>c = </span>
                       <div className="flex flex-col items-center">
                         <span className="border-b-2 border-amber-900 pb-1 px-4">m × 1000</span>
-                        <span className="pt-1">M × (V - V₀)</span>
+                        <span className="pt-1">M × (V - V₀) × Xi</span>
                       </div>
                    </div>
                 </div>
@@ -379,7 +382,7 @@ const Workflow: React.FC = () => {
                          <span>SD = </span>
                          <span className="text-3xl">√</span>
                          <div className="flex flex-col items-center border-t-2 border-amber-900 pt-1">
-                           <span className="border-b-2 border-amber-900 pb-1 px-4">Σ (xᵢ - x̄)²</span>
+                           <span className="border-b-2 border-amber-900 pb-1 px-4">Σ (Xi,ᵢ - x̄)²</span>
                            <span className="pt-1">n</span>
                          </div>
                       </div>
@@ -402,8 +405,9 @@ const Workflow: React.FC = () => {
                     <li className="flex justify-between border-b border-amber-100 pb-1"><span>m: 氯化钠质量</span><span>(g)</span></li>
                     <li className="flex justify-between border-b border-amber-100 pb-1"><span>V: AgNO₃ 滴定体积</span><span>(mL)</span></li>
                     <li className="flex justify-between border-b border-amber-100 pb-1"><span>V₀: 空白滴定体积</span><span>(mL)</span></li>
+                    <li className="flex justify-between border-b border-amber-100 pb-1"><span>Xi: 稀释倍数</span><span>200</span></li>
                     <li className="flex justify-between border-b border-amber-100 pb-1"><span>SD: 标准偏差</span><span>--</span></li>
-                    <li className="flex justify-between border-b border-amber-100 pb-1"><span>xᵢ: 各次实验测定值</span><span>mol/L</span></li>
+                    <li className="flex justify-between border-b border-amber-100 pb-1"><span>Xi,ᵢ: 各次实验测定值</span><span>mol/L</span></li>
                     <li className="flex justify-between border-b border-amber-100 pb-1"><span>x̄: 测定平均值</span><span>mol/L</span></li>
                     <li className="flex justify-between border-b border-amber-100 pb-1"><span>n: 平行测定次数</span><span>3</span></li>
                     <li className="flex justify-between border-b border-amber-100 pb-1 col-span-2 text-amber-600 font-black"><span>M: NaCl 摩尔质量</span><span>58.44 g/mol</span></li>
@@ -412,18 +416,49 @@ const Workflow: React.FC = () => {
             </div>
 
             <div className="space-y-4">
-              <div className="p-5 bg-slate-100 rounded-3xl border border-slate-200">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-5 bg-slate-100 rounded-3xl border border-slate-200">
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">空白滴定体积 V₀ (mL)</label>
+                    <Info className="w-3 h-3 text-slate-400" />
+                  </div>
+                  <input 
+                    type="number" 
+                    value={titrationData.v0}
+                    onChange={(e) => setTitrationData({...titrationData, v0: e.target.value})}
+                    placeholder="0.05"
+                    className="w-full px-5 py-3 bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-amber-500 outline-none font-black text-lg"
+                  />
+                </div>
+
+                <div className="p-5 bg-slate-100 rounded-3xl border border-slate-200">
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">稀释倍数 Xi</label>
+                    <Info className="w-3 h-3 text-slate-400" />
+                  </div>
+                  <input 
+                    type="number" 
+                    value={titrationData.xi}
+                    onChange={(e) => setTitrationData({...titrationData, xi: e.target.value})}
+                    placeholder="200"
+                    className="w-full px-5 py-3 bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-amber-500 outline-none font-black text-lg"
+                  />
+                </div>
+              </div>
+
+              <div className="p-5 bg-amber-50 rounded-3xl border border-amber-200 shadow-sm">
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">空白滴定体积 V₀ (mL)</label>
-                  <Info className="w-3 h-3 text-slate-400" />
+                  <label className="text-[10px] font-black text-amber-600 uppercase tracking-widest ml-1">NaCl 质量 m (g)</label>
+                  <Sparkles className="w-3 h-3 text-amber-400" />
                 </div>
                 <input 
                   type="number" 
-                  value={titrationData.v0}
-                  onChange={(e) => setTitrationData({...titrationData, v0: e.target.value})}
-                  placeholder="0.05"
-                  className="w-full px-5 py-3 bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-amber-500 outline-none font-black text-lg"
+                  value={titrationData.m_nacl}
+                  onChange={(e) => setTitrationData({...titrationData, m_nacl: e.target.value})}
+                  placeholder="0.1200"
+                  className="w-full px-5 py-3 bg-white border border-amber-200 rounded-2xl focus:ring-2 focus:ring-amber-500 outline-none font-black text-lg text-amber-900"
                 />
+                <p className="text-[9px] text-amber-500 font-bold mt-2 ml-1">提示：此质量将应用于下方所有平行实验</p>
               </div>
 
               {titrationData.trials.map((trial, index) => (
@@ -436,32 +471,15 @@ const Workflow: React.FC = () => {
                     </h5>
                     <span className="text-[10px] font-bold text-slate-400">TRIAL {index + 1}</span>
                   </div>
-                  <div className="grid grid-cols-2 gap-4 relative z-10">
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">NaCl 质量 m (g)</label>
-                      <input 
-                        type="number" 
-                        value={trial.m}
-                        onChange={(e) => updateTrial(index, 'm', e.target.value)}
-                        placeholder="0.1200"
-                        className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none font-bold text-sm"
-                      />
-                      {trial.m && (
-                        <p className="text-[9px] text-amber-600 font-bold mt-1 ml-1">
-                          n: {(parseFloat(trial.m) / 58.44).toFixed(6)} mol
-                        </p>
-                      )}
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">滴定体积 V (mL)</label>
-                      <input 
-                        type="number" 
-                        value={trial.v}
-                        onChange={(e) => updateTrial(index, 'v', e.target.value)}
-                        placeholder="20.50"
-                        className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none font-bold text-sm"
-                      />
-                    </div>
+                  <div className="space-y-1.5 relative z-10">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">滴定体积 V (mL)</label>
+                    <input 
+                      type="number" 
+                      value={trial.v}
+                      onChange={(e) => updateTrial(index, 'v', e.target.value)}
+                      placeholder="20.50"
+                      className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none font-bold text-sm"
+                    />
                   </div>
                 </div>
               ))}
@@ -472,6 +490,7 @@ const Workflow: React.FC = () => {
                   <div className="bg-white/50 p-4 rounded-2xl border border-amber-100 text-center">
                     <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1">平均浓度 c</p>
                     <p className="text-xl font-black text-amber-900">{titrationData.concentration} mol/L</p>
+                    <p className="text-[9px] text-amber-500 font-bold mt-1">(已计入 Xi={titrationData.xi})</p>
                   </div>
                   <div className="bg-white/50 p-4 rounded-2xl border border-amber-100 text-center">
                     <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1">精密度 (RSD)</p>
@@ -484,7 +503,7 @@ const Workflow: React.FC = () => {
                </div>
                <button 
                 onClick={calculateStandardization}
-                disabled={titrationData.trials.some(t => !t.m || !t.v)}
+                disabled={!titrationData.m_nacl || titrationData.trials.some(t => !t.v)}
                 className="w-full py-4 bg-amber-600 text-white rounded-2xl font-black hover:bg-amber-700 transition-all shadow-lg shadow-amber-100 flex items-center justify-center"
               >
                 <span>计算平均标定浓度并进入测定</span>
@@ -546,7 +565,7 @@ const Workflow: React.FC = () => {
                  <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-2 text-xs font-bold text-slate-600">
                     <li className="flex justify-between border-b border-indigo-100 pb-1"><span>V: 样品消耗AgNO₃体积</span><span>(mL)</span></li>
                     <li className="flex justify-between border-b border-indigo-100 pb-1"><span>V₀: 空白消耗AgNO₃体积</span><span>(mL)</span></li>
-                    <li className="flex justify-between border-b border-indigo-100 pb-1"><span>c: AgNO₃标准溶液浓度</span><span>(mol/L)</span></li>
+                    <li className="flex justify-between border-b border-indigo-100 pb-1"><span>c: AgNO₃标准溶液浓度</span><span>(mol/L, 计入 Xi)</span></li>
                     <li className="flex justify-between border-b border-indigo-100 pb-1"><span>m: 样品质量</span><span>(g)</span></li>
                     <li className="flex justify-between border-b border-indigo-100 pb-1"><span>SD: 标准偏差</span><span>--</span></li>
                     <li className="flex justify-between border-b border-indigo-100 pb-1"><span>xᵢ: 各次实验测定值</span><span>%</span></li>
@@ -701,7 +720,7 @@ const Workflow: React.FC = () => {
                <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-2 text-xs font-bold text-slate-600">
                   <li className="flex justify-between border-b border-indigo-100 pb-1"><span>V: 样品消耗AgNO₃体积</span><span>(mL)</span></li>
                   <li className="flex justify-between border-b border-indigo-100 pb-1"><span>V₀: 空白消耗AgNO₃体积</span><span>(mL)</span></li>
-                  <li className="flex justify-between border-b border-indigo-100 pb-1"><span>c: AgNO₃标准溶液浓度</span><span>(mol/L)</span></li>
+                  <li className="flex justify-between border-b border-indigo-100 pb-1"><span>c: AgNO₃标准溶液浓度</span><span>(mol/L, 已含 Xi 修正)</span></li>
                   <li className="flex justify-between border-b border-indigo-100 pb-1"><span>m: 样品质量</span><span>(g)</span></li>
                   <li className="flex justify-between border-b border-indigo-100 pb-1"><span>SD: 标准偏差</span><span>--</span></li>
                   <li className="flex justify-between border-b border-indigo-100 pb-1"><span>xᵢ: 各次实验测定值</span><span>%</span></li>
@@ -874,9 +893,12 @@ const Workflow: React.FC = () => {
           <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '10px' }}>二、实验原理</h2>
           <p style={{ fontSize: '14px', lineHeight: '1.6' }}>样品先通过超声、离心、过滤处理涂料，让其中的氯离子完全释放到溶液中；用硝酸调节溶液酸度，避免干扰离子影响。再用硝酸银标准溶液滴定，银离子与氯离子会生成不溶于水的氯化银沉淀，电位滴定仪会在反应终点时出现明显电位突变，记录此时硝酸银溶液的消耗量，就能算出氯离子含量。</p>
           <div style={{ textAlign: 'center', margin: '15px 0', fontSize: '16px', fontWeight: 'bold' }}>
-            核心公式：w(Cl⁻) = [(V-V₀)×c×35.45] / m × 100 × 100%
+            标定公式：c = (m × 1000) / [M × (V - V₀) × Xi]
           </div>
-          <p style={{ fontSize: '12px', color: '#666' }}>（V-样品消耗标液体积，V₀-空白消耗标液体积，c-标液浓度，m-样品取样量，35.45-Cl⁻摩尔质量）</p>
+          <div style={{ textAlign: 'center', margin: '15px 0', fontSize: '16px', fontWeight: 'bold' }}>
+            测定公式：w(Cl⁻) = [(V-V₀)×c×35.45] / m × 100 × 100%
+          </div>
+          <p style={{ fontSize: '12px', color: '#666' }}>（V-消耗标液体积，V₀-空白消耗体积，c-标液浓度，m-取样量，Xi-稀释倍数，35.45-Cl⁻摩尔质量）</p>
         </section>
 
         <section style={{ marginBottom: '20px' }}>
@@ -909,12 +931,14 @@ const Workflow: React.FC = () => {
             </thead>
             <tbody>
               <tr>
-                <td style={{ border: '1px solid #ddd', padding: '8px', fontSize: '13px' }}>样品质量 m (g)</td>
-                <td colSpan={3} style={{ border: '1px solid #ddd', padding: '8px', fontSize: '13px', textAlign: 'center' }}>{titrationData.m_sample}</td>
+                <td style={{ border: '1px solid #ddd', padding: '8px', fontSize: '13px' }}>NaCl 质量 m (g)</td>
+                <td colSpan={3} style={{ border: '1px solid #ddd', padding: '8px', fontSize: '13px', textAlign: 'center' }}>{titrationData.m_nacl}</td>
               </tr>
               <tr>
                 <td style={{ border: '1px solid #ddd', padding: '8px', fontSize: '13px' }}>标液浓度 c (mol/L)</td>
-                <td colSpan={3} style={{ border: '1px solid #ddd', padding: '8px', fontSize: '13px', textAlign: 'center' }}>{titrationData.concentration}</td>
+                <td colSpan={3} style={{ border: '1px solid #ddd', padding: '8px', fontSize: '13px', textAlign: 'center' }}>
+                  {titrationData.concentration} (Xi={titrationData.xi})
+                </td>
               </tr>
               <tr>
                 <td style={{ border: '1px solid #ddd', padding: '8px', fontSize: '13px' }}>空白体积 V₀ (mL)</td>
