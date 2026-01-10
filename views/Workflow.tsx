@@ -119,6 +119,9 @@ const Workflow: React.FC = () => {
   };
 
   const updateTrial = (index: number, field: string, value: string) => {
+    // 基础输入过滤：仅允许非负数字和小数点
+    if (value !== '' && !/^\d*\.?\d*$/.test(value)) return;
+    
     const newTrials = [...titrationData.trials];
     newTrials[index] = { ...newTrials[index], [field]: value };
     setTitrationData({ ...titrationData, trials: newTrials });
@@ -547,6 +550,27 @@ const Workflow: React.FC = () => {
                     <span> × 100%</span>
                  </div>
               </div>
+
+              <div className="flex flex-col items-center justify-center p-8 bg-white rounded-3xl border border-indigo-100 shadow-sm">
+                 <div className="flex flex-col items-center space-y-4">
+                    <div className="flex items-center space-x-2 text-xl font-black text-indigo-900">
+                       <span>SD = </span>
+                       <span className="text-3xl">√</span>
+                       <div className="flex flex-col items-center border-t-2 border-indigo-900 pt-1">
+                         <span className="border-b-2 border-indigo-900 pb-1 px-4">Σ (xᵢ - x̄)²</span>
+                         <span className="pt-1">n</span>
+                       </div>
+                    </div>
+                    <div className="flex items-center space-x-2 text-xl font-black text-indigo-900 border-t border-indigo-100 pt-4 w-full justify-center">
+                       <span>RSD = </span>
+                       <div className="flex flex-col items-center">
+                         <span className="border-b-2 border-indigo-900 pb-1 px-4">SD</span>
+                         <span className="pt-1">平均值 (x̄)</span>
+                       </div>
+                       <span> × 100%</span>
+                    </div>
+                 </div>
+              </div>
             </div>
             <div className="space-y-3 mt-6">
                <p className="text-xs font-black text-slate-500 uppercase tracking-widest">式中：</p>
@@ -555,6 +579,10 @@ const Workflow: React.FC = () => {
                   <li className="flex justify-between border-b border-indigo-100 pb-1"><span>V₀: 空白消耗AgNO₃体积</span><span>(mL)</span></li>
                   <li className="flex justify-between border-b border-indigo-100 pb-1"><span>c: AgNO₃标准溶液浓度</span><span>(mol/L)</span></li>
                   <li className="flex justify-between border-b border-indigo-100 pb-1"><span>m: 样品质量</span><span>(g)</span></li>
+                  <li className="flex justify-between border-b border-indigo-100 pb-1"><span>SD: 标准偏差</span><span>--</span></li>
+                  <li className="flex justify-between border-b border-indigo-100 pb-1"><span>xᵢ: 各次实验测定值</span><span>%</span></li>
+                  <li className="flex justify-between border-b border-indigo-100 pb-1"><span>x̄: 测定平均值</span><span>%</span></li>
+                  <li className="flex justify-between border-b border-indigo-100 pb-1"><span>n: 平行测定次数</span><span>3</span></li>
                </ul>
             </div>
           </div>
@@ -569,7 +597,7 @@ const Workflow: React.FC = () => {
                   <tr className="text-slate-400 border-b border-slate-200">
                     <th className="pb-3 font-black text-left">实验序号</th>
                     <th className="pb-3 font-black text-center">滴定体积 (V/mL)</th>
-                    <th className="pb-3 font-black text-right">计算值</th>
+                    <th className="pb-3 font-black text-right">含量 ω(Cl⁻)</th>
                   </tr>
                 </thead>
                 <tbody className="text-slate-700">
@@ -594,13 +622,16 @@ const Workflow: React.FC = () => {
               <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center">
                 <Sparkles className="w-3.5 h-3.5 mr-2 text-indigo-500" /> AI 智能初审意见
               </h4>
-              <span className={`px-2 py-1 ${titrationData.rsd < 0.5 ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'} text-[8px] font-black rounded uppercase`}>
-                {titrationData.rsd < 0.5 ? 'Pass' : 'Review Required'}
+              <span className={`px-2 py-1 ${titrationData.rsd < 0.5 && titrationData.relativeRange < 0.3 ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'} text-[8px] font-black rounded uppercase`}>
+                {titrationData.rsd < 0.5 && titrationData.relativeRange < 0.3 ? 'Pass' : 'Review Required'}
               </span>
             </div>
             <p className="text-xs text-slate-600 leading-relaxed font-medium">
-              平行实验精密度 (RSD) 为 {titrationData.rsd}%，{titrationData.rsd < 0.5 ? '符合国标规定极限（≤0.5%）。' : '偏差略大，建议检查终点判定是否一致。'}
-              计算逻辑匹配 Ag⁺ + Cl⁻ → AgCl↓ 反应计量比，结果有效。
+              平行实验精密度 (RSD) 为 {titrationData.rsd}%，相对极差为 {titrationData.relativeRange}%。
+              {titrationData.rsd < 0.5 && titrationData.relativeRange < 0.3 
+                ? '各项精密度指标均符合实验室质量控制要求（RSD ≤ 0.5%, 相对极差 ≤ 0.3%）。' 
+                : '结果偏差略大。建议检查滴定管读数、终点颜色判定是否一致，或重新进行平行测定。'}
+              计算逻辑遵循莫尔法核心反应方程式 Ag⁺ + Cl⁻ → AgCl↓，结果归档有效。
             </p>
           </div>
         </div>
