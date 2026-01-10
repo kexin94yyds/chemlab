@@ -59,7 +59,7 @@ const Workflow: React.FC = () => {
   });
 
   const calculateStandardization = () => {
-    const M = 58.5;
+    const M = 58.44; // 氯化钠摩尔质量
     const v0 = parseFloat(titrationData.v0);
     const concentrations: number[] = [];
 
@@ -73,9 +73,21 @@ const Workflow: React.FC = () => {
 
     if (concentrations.length > 0) {
       const avgC = concentrations.reduce((a, b) => a + b, 0) / concentrations.length;
+      
+      // 计算 RSD 和相对极差用于标定阶段（可选显示）
+      const variance = concentrations.reduce((a, b) => a + Math.pow(b - avgC, 2), 0) / concentrations.length;
+      const stdDev = Math.sqrt(variance);
+      const rsd = (stdDev / avgC) * 100;
+      
+      const maxVal = Math.max(...concentrations);
+      const minVal = Math.min(...concentrations);
+      const relativeRange = ((maxVal - minVal) / avgC) * 100;
+
       setTitrationData({
         ...titrationData,
         concentration: avgC.toFixed(4),
+        rsd: parseFloat(rsd.toFixed(2)),
+        relativeRange: parseFloat(relativeRange.toFixed(2)),
         isStandardizing: false
       });
     }
@@ -316,23 +328,51 @@ const Workflow: React.FC = () => {
           <div className="space-y-6">
             <div className="p-8 bg-amber-50/50 rounded-[2.5rem] border border-amber-100">
               <h4 className="text-lg font-black text-slate-800 mb-6">第一步：硝酸银标定</h4>
-              <div className="flex flex-col items-center justify-center p-8 bg-white rounded-3xl border border-amber-100 shadow-sm mb-6">
-                 <div className="flex items-center space-x-2 text-2xl font-black text-amber-900">
-                    <span>c = </span>
-                    <div className="flex flex-col items-center">
-                      <span className="border-b-2 border-amber-900 pb-1 px-4">m × 1000</span>
-                      <span className="pt-1">M × (V - V₀)</span>
-                    </div>
-                 </div>
+              <div className="space-y-6">
+                <div className="flex flex-col items-center justify-center p-8 bg-white rounded-3xl border border-amber-100 shadow-sm">
+                   <div className="flex items-center space-x-2 text-2xl font-black text-amber-900">
+                      <span>c = </span>
+                      <div className="flex flex-col items-center">
+                        <span className="border-b-2 border-amber-900 pb-1 px-4">m × 1000</span>
+                        <span className="pt-1">M × (V - V₀)</span>
+                      </div>
+                   </div>
+                </div>
+
+                <div className="flex flex-col items-center justify-center p-8 bg-white rounded-3xl border border-amber-100 shadow-sm">
+                   <div className="flex flex-col items-center space-y-4">
+                      <div className="flex items-center space-x-2 text-xl font-black text-amber-900">
+                         <span>SD = </span>
+                         <span className="text-3xl">√</span>
+                         <div className="flex flex-col items-center border-t-2 border-amber-900 pt-1">
+                           <span className="border-b-2 border-amber-900 pb-1 px-4">Σ (xᵢ - x̄)²</span>
+                           <span className="pt-1">n</span>
+                         </div>
+                      </div>
+                      <div className="flex items-center space-x-2 text-xl font-black text-amber-900 border-t border-amber-100 pt-4 w-full justify-center">
+                         <span>RSD = </span>
+                         <div className="flex flex-col items-center">
+                           <span className="border-b-2 border-amber-900 pb-1 px-4">SD</span>
+                           <span className="pt-1">平均值 (x̄)</span>
+                         </div>
+                         <span> × 100%</span>
+                      </div>
+                   </div>
+                </div>
               </div>
-              <div className="space-y-3">
+
+              <div className="space-y-3 mt-6">
                  <p className="text-xs font-black text-slate-500 uppercase tracking-widest">式中：</p>
                  <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-2 text-xs font-bold text-slate-600">
                     <li className="flex justify-between border-b border-amber-100 pb-1"><span>c: AgNO₃ 标准溶液浓度</span><span>(mol/L)</span></li>
                     <li className="flex justify-between border-b border-amber-100 pb-1"><span>m: 氯化钠质量</span><span>(g)</span></li>
                     <li className="flex justify-between border-b border-amber-100 pb-1"><span>V: AgNO₃ 滴定体积</span><span>(mL)</span></li>
                     <li className="flex justify-between border-b border-amber-100 pb-1"><span>V₀: 空白滴定体积</span><span>(mL)</span></li>
-                    <li className="flex justify-between border-b border-amber-100 pb-1 col-span-2 text-amber-600"><span>M: NaCl 摩尔质量</span><span>58.5 g/mol</span></li>
+                    <li className="flex justify-between border-b border-amber-100 pb-1"><span>SD: 标准偏差</span><span>--</span></li>
+                    <li className="flex justify-between border-b border-amber-100 pb-1"><span>xᵢ: 各次实验测定值</span><span>mol/L</span></li>
+                    <li className="flex justify-between border-b border-amber-100 pb-1"><span>x̄: 测定平均值</span><span>mol/L</span></li>
+                    <li className="flex justify-between border-b border-amber-100 pb-1"><span>n: 平行测定次数</span><span>3</span></li>
+                    <li className="flex justify-between border-b border-amber-100 pb-1 col-span-2 text-amber-600 font-black"><span>M: NaCl 摩尔质量</span><span>58.44 g/mol</span></li>
                  </ul>
               </div>
             </div>
@@ -393,17 +433,28 @@ const Workflow: React.FC = () => {
               ))}
             </div>
 
-            <div className="p-6 bg-amber-50 border border-amber-200 rounded-3xl space-y-4">
-               <div className="flex justify-between items-center">
-                  <label className="text-xs font-black text-amber-800 uppercase tracking-widest">标定结果平均浓度 c (mol/L)</label>
-                  <div className="text-xl font-black text-amber-900">{titrationData.concentration}</div>
+            <div className="p-6 bg-amber-50 border border-amber-200 rounded-3xl space-y-6">
+               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-white/50 p-4 rounded-2xl border border-amber-100 text-center">
+                    <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1">平均浓度 c</p>
+                    <p className="text-xl font-black text-amber-900">{titrationData.concentration} mol/L</p>
+                  </div>
+                  <div className="bg-white/50 p-4 rounded-2xl border border-amber-100 text-center">
+                    <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1">精密度 (RSD)</p>
+                    <p className="text-xl font-black text-amber-900">{titrationData.rsd}%</p>
+                  </div>
+                  <div className="bg-white/50 p-4 rounded-2xl border border-amber-100 text-center">
+                    <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1">相对极差</p>
+                    <p className="text-xl font-black text-amber-900">{titrationData.relativeRange}%</p>
+                  </div>
                </div>
                <button 
                 onClick={calculateStandardization}
                 disabled={titrationData.trials.some(t => !t.m || !t.v)}
-                className="w-full py-4 bg-amber-600 text-white rounded-2xl font-black hover:bg-amber-700 transition-all shadow-lg shadow-amber-100"
+                className="w-full py-4 bg-amber-600 text-white rounded-2xl font-black hover:bg-amber-700 transition-all shadow-lg shadow-amber-100 flex items-center justify-center"
               >
-                计算平均标定浓度
+                <span>计算平均标定浓度并进入测定</span>
+                <ArrowRight className="w-5 h-5 ml-2" />
               </button>
             </div>
           </div>
@@ -411,23 +462,41 @@ const Workflow: React.FC = () => {
           <div className="space-y-6">
             <div className="p-8 bg-indigo-50/50 rounded-[2.5rem] border border-indigo-100">
               <h4 className="text-lg font-black text-slate-800 mb-6">第四步：结果计算 (样品测定)</h4>
-              <div className="flex flex-col items-center justify-center p-8 bg-white rounded-3xl border border-indigo-100 shadow-sm mb-6">
-                 <div className="flex items-center space-x-2 text-2xl font-black text-indigo-900">
-                    <span>ω(Cl⁻) = </span>
-                    <div className="flex flex-col items-center">
-                      <span className="border-b-2 border-indigo-900 pb-1 px-4">(V - V₀) × c × 35.45</span>
-                      <span className="pt-1">m × 1000</span>
-                    </div>
-                    <span> × 100%</span>
-                 </div>
+              <div className="space-y-6">
+                <div className="flex flex-col items-center justify-center p-8 bg-white rounded-3xl border border-indigo-100 shadow-sm">
+                   <div className="flex items-center space-x-2 text-2xl font-black text-indigo-900">
+                      <span>ω(Cl⁻) = </span>
+                      <div className="flex flex-col items-center">
+                        <span className="border-b-2 border-indigo-900 pb-1 px-4">(V - V₀) × c × 35.45</span>
+                        <span className="pt-1">m × 1000</span>
+                      </div>
+                      <span> × 100%</span>
+                   </div>
+                </div>
+
+                <div className="flex flex-col items-center justify-center p-8 bg-white rounded-3xl border border-indigo-100 shadow-sm">
+                   <div className="flex items-center space-x-2 text-xl font-black text-indigo-900">
+                      <span>相对极差 = </span>
+                      <div className="flex flex-col items-center">
+                        <span className="border-b-2 border-indigo-900 pb-1 px-4">最大值 - 最小值</span>
+                        <span className="pt-1">平均值</span>
+                      </div>
+                      <span> × 100%</span>
+                   </div>
+                </div>
               </div>
-              <div className="space-y-3">
+
+              <div className="space-y-3 mt-6">
                  <p className="text-xs font-black text-slate-500 uppercase tracking-widest">式中：</p>
                  <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-2 text-xs font-bold text-slate-600">
                     <li className="flex justify-between border-b border-indigo-100 pb-1"><span>V: 样品消耗AgNO₃体积</span><span>(mL)</span></li>
                     <li className="flex justify-between border-b border-indigo-100 pb-1"><span>V₀: 空白消耗AgNO₃体积</span><span>(mL)</span></li>
                     <li className="flex justify-between border-b border-indigo-100 pb-1"><span>c: AgNO₃标准溶液浓度</span><span>(mol/L)</span></li>
                     <li className="flex justify-between border-b border-indigo-100 pb-1"><span>m: 样品质量</span><span>(g)</span></li>
+                    <li className="flex justify-between border-b border-indigo-100 pb-1"><span>SD: 标准偏差</span><span>--</span></li>
+                    <li className="flex justify-between border-b border-indigo-100 pb-1"><span>xᵢ: 各次实验测定值</span><span>%</span></li>
+                    <li className="flex justify-between border-b border-indigo-100 pb-1"><span>x̄: 测定平均值</span><span>%</span></li>
+                    <li className="flex justify-between border-b border-indigo-100 pb-1"><span>n: 平行测定次数</span><span>3</span></li>
                  </ul>
               </div>
               <p className="text-xs font-bold text-indigo-900 leading-relaxed mt-4">
