@@ -54,6 +54,7 @@ const Workflow: React.FC = () => {
     concentration: '0.1000',
     result: 0,
     rsd: 0,
+    relativeRange: 0,
     isStandardizing: true // 是否处于标定阶段
   });
 
@@ -101,10 +102,16 @@ const Workflow: React.FC = () => {
       const stdDev = Math.sqrt(variance);
       const rsd = (stdDev / avgRes) * 100;
 
+      // 计算相对极差
+      const maxVal = Math.max(...results);
+      const minVal = Math.min(...results);
+      const relativeRange = ((maxVal - minVal) / avgRes) * 100;
+
       setTitrationData({
         ...titrationData,
         result: parseFloat(avgRes.toFixed(4)),
         rsd: parseFloat(rsd.toFixed(2)),
+        relativeRange: parseFloat(relativeRange.toFixed(2)),
         average: results.length
       });
       setCurrentStage(WorkflowStage.RESULT);
@@ -507,24 +514,41 @@ const Workflow: React.FC = () => {
           </div>
           <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-200 text-center">
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">精密度 (RSD)</p>
-            <p className="text-3xl font-black text-slate-800">0.08%</p>
+            <p className="text-3xl font-black text-slate-800">{titrationData.rsd}%</p>
+          </div>
+          <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-200 text-center">
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">相对极差</p>
+            <p className="text-3xl font-black text-slate-800">{titrationData.relativeRange}%</p>
           </div>
         </div>
 
         <div className="space-y-6">
           <div className="p-8 bg-indigo-50/50 rounded-[2.5rem] border border-indigo-100">
             <h4 className="text-lg font-black text-slate-800 mb-6">第四步：结果计算</h4>
-            <div className="flex flex-col items-center justify-center p-8 bg-white rounded-3xl border border-indigo-100 shadow-sm mb-6">
-               <div className="flex items-center space-x-2 text-2xl font-black text-indigo-900">
-                  <span>ω(Cl⁻) = </span>
-                  <div className="flex flex-col items-center">
-                    <span className="border-b-2 border-indigo-900 pb-1 px-4">(V - V₀) × c × 35.45</span>
-                    <span className="pt-1">m × 1000</span>
-                  </div>
-                  <span> × 100%</span>
-               </div>
+            <div className="space-y-6">
+              <div className="flex flex-col items-center justify-center p-8 bg-white rounded-3xl border border-indigo-100 shadow-sm">
+                 <div className="flex items-center space-x-2 text-2xl font-black text-indigo-900">
+                    <span>ω(Cl⁻) = </span>
+                    <div className="flex flex-col items-center">
+                      <span className="border-b-2 border-indigo-900 pb-1 px-4">(V - V₀) × c × 35.45</span>
+                      <span className="pt-1">m × 1000</span>
+                    </div>
+                    <span> × 100%</span>
+                 </div>
+              </div>
+              
+              <div className="flex flex-col items-center justify-center p-8 bg-white rounded-3xl border border-indigo-100 shadow-sm">
+                 <div className="flex items-center space-x-2 text-xl font-black text-indigo-900">
+                    <span>相对极差 = </span>
+                    <div className="flex flex-col items-center">
+                      <span className="border-b-2 border-indigo-900 pb-1 px-4">最大值 - 最小值</span>
+                      <span className="pt-1">平均值</span>
+                    </div>
+                    <span> × 100%</span>
+                 </div>
+              </div>
             </div>
-            <div className="space-y-3">
+            <div className="space-y-3 mt-6">
                <p className="text-xs font-black text-slate-500 uppercase tracking-widest">式中：</p>
                <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-2 text-xs font-bold text-slate-600">
                   <li className="flex justify-between border-b border-indigo-100 pb-1"><span>V: 样品消耗AgNO₃体积</span><span>(mL)</span></li>
@@ -555,9 +579,7 @@ const Workflow: React.FC = () => {
                       <td className="py-3 text-center font-mono">{trial.v || '--'}</td>
                       <td className="py-3 text-right font-mono">
                         {trial.v ? (
-                          titrationData.concentration === '0.1000' && !titrationData.isStandardizing 
-                          ? ((parseFloat(trial.v) - parseFloat(titrationData.v0)) * 0.1 * 35.45 / (parseFloat(titrationData.m_sample) * 1000) * 100).toFixed(4) + '%'
-                          : '--'
+                          ((parseFloat(trial.v) - parseFloat(titrationData.v0)) * parseFloat(titrationData.concentration) * 35.45 / (parseFloat(titrationData.m_sample) * 1000) * 100).toFixed(4) + '%'
                         ) : '--'}
                       </td>
                     </tr>
