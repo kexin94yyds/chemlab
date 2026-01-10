@@ -414,7 +414,7 @@ const Workflow: React.FC = () => {
                       />
                       {trial.m && (
                         <p className="text-[9px] text-amber-600 font-bold mt-1 ml-1">
-                          n: {(parseFloat(trial.m) / 58.5).toFixed(6)} mol
+                          n: {(parseFloat(trial.m) / 58.44).toFixed(6)} mol
                         </p>
                       )}
                     </div>
@@ -482,6 +482,27 @@ const Workflow: React.FC = () => {
                         <span className="pt-1">平均值</span>
                       </div>
                       <span> × 100%</span>
+                   </div>
+                </div>
+
+                <div className="flex flex-col items-center justify-center p-8 bg-white rounded-3xl border border-indigo-100 shadow-sm">
+                   <div className="flex flex-col items-center space-y-4">
+                      <div className="flex items-center space-x-2 text-xl font-black text-indigo-900">
+                         <span>SD = </span>
+                         <span className="text-3xl">√</span>
+                         <div className="flex flex-col items-center border-t-2 border-indigo-900 pt-1">
+                           <span className="border-b-2 border-indigo-900 pb-1 px-4">Σ (xᵢ - x̄)²</span>
+                           <span className="pt-1">n</span>
+                         </div>
+                      </div>
+                      <div className="flex items-center space-x-2 text-xl font-black text-indigo-900 border-t border-indigo-100 pt-4 w-full justify-center">
+                         <span>RSD = </span>
+                         <div className="flex flex-col items-center">
+                           <span className="border-b-2 border-indigo-900 pb-1 px-4">SD</span>
+                           <span className="pt-1">平均值 (x̄)</span>
+                         </div>
+                         <span> × 100%</span>
+                      </div>
                    </div>
                 </div>
               </div>
