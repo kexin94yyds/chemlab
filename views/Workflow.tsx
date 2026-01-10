@@ -89,7 +89,7 @@ const Workflow: React.FC = () => {
     concentration: '0.1000',
     result: 0,
     rsd: 0,
-    relativeRange: 0,
+    standardRsd: 0, // 标定阶段的 RSD
     xi: '200', // 稀释倍数
     isStandardizing: true // 是否处于标定阶段
   });
@@ -111,20 +111,13 @@ const Workflow: React.FC = () => {
     if (concentrations.length > 0) {
       const avgC = concentrations.reduce((a, b) => a + b, 0) / concentrations.length;
       
-      // 计算 RSD 和相对极差用于标定阶段（可选显示）
-      const variance = concentrations.reduce((a, b) => a + Math.pow(b - avgC, 2), 0) / concentrations.length;
-      const stdDev = Math.sqrt(variance);
+      const stdDev = Math.sqrt(concentrations.reduce((a, b) => a + Math.pow(b - avgC, 2), 0) / concentrations.length);
       const rsd = (stdDev / avgC) * 100;
       
-      const maxVal = Math.max(...concentrations);
-      const minVal = Math.min(...concentrations);
-      const relativeRange = ((maxVal - minVal) / avgC) * 100;
-
       setTitrationData({
         ...titrationData,
         concentration: avgC.toFixed(4),
-        rsd: parseFloat(rsd.toFixed(2)),
-        relativeRange: parseFloat(relativeRange.toFixed(2)),
+        standardRsd: parseFloat(rsd.toFixed(2)),
         isStandardizing: false
       });
     }
@@ -147,20 +140,13 @@ const Workflow: React.FC = () => {
     if (results.length > 0) {
       const avgRes = results.reduce((a, b) => a + b, 0) / results.length;
       // 计算 RSD
-      const variance = results.reduce((a, b) => a + Math.pow(b - avgRes, 2), 0) / results.length;
-      const stdDev = Math.sqrt(variance);
+      const stdDev = Math.sqrt(results.reduce((a, b) => a + Math.pow(b - avgRes, 2), 0) / results.length);
       const rsd = (stdDev / avgRes) * 100;
-
-      // 计算相对极差
-      const maxVal = Math.max(...results);
-      const minVal = Math.min(...results);
-      const relativeRange = ((maxVal - minVal) / avgRes) * 100;
 
       setTitrationData({
         ...titrationData,
         result: parseFloat(avgRes.toFixed(4)),
         rsd: parseFloat(rsd.toFixed(2)),
-        relativeRange: parseFloat(relativeRange.toFixed(2)),
         average: results.length
       });
       setCurrentStage(WorkflowStage.RESULT);
@@ -496,10 +482,6 @@ const Workflow: React.FC = () => {
                     <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1">精密度 (RSD)</p>
                     <p className="text-xl font-black text-amber-900">{titrationData.rsd}%</p>
                   </div>
-                  <div className="bg-white/50 p-4 rounded-2xl border border-amber-100 text-center">
-                    <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1">相对极差</p>
-                    <p className="text-xl font-black text-amber-900">{titrationData.relativeRange}%</p>
-                  </div>
                </div>
                <button 
                 onClick={calculateStandardization}
@@ -522,17 +504,6 @@ const Workflow: React.FC = () => {
                       <div className="flex flex-col items-center">
                         <span className="border-b-2 border-indigo-900 pb-1 px-4">(V - V₀) × c × 35.45</span>
                         <span className="pt-1">m × 1000</span>
-                      </div>
-                      <span> × 100%</span>
-                   </div>
-                </div>
-
-                <div className="flex flex-col items-center justify-center p-8 bg-white rounded-3xl border border-indigo-100 shadow-sm">
-                   <div className="flex items-center space-x-2 text-xl font-black text-indigo-900">
-                      <span>相对极差 = </span>
-                      <div className="flex flex-col items-center">
-                        <span className="border-b-2 border-indigo-900 pb-1 px-4">最大值 - 最小值</span>
-                        <span className="pt-1">平均值</span>
                       </div>
                       <span> × 100%</span>
                    </div>
@@ -658,14 +629,6 @@ const Workflow: React.FC = () => {
             <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">氯离子含量平均值</p>
             <p className="text-3xl font-black text-emerald-900">{titrationData.result}%</p>
           </div>
-          <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-200 text-center">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">精密度 (RSD)</p>
-            <p className="text-3xl font-black text-slate-800">{titrationData.rsd}%</p>
-          </div>
-          <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-200 text-center">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">相对极差</p>
-            <p className="text-3xl font-black text-slate-800">{titrationData.relativeRange}%</p>
-          </div>
         </div>
 
         <div className="space-y-6">
@@ -683,17 +646,6 @@ const Workflow: React.FC = () => {
                  </div>
               </div>
               
-              <div className="flex flex-col items-center justify-center p-8 bg-white rounded-3xl border border-indigo-100 shadow-sm">
-                 <div className="flex items-center space-x-2 text-xl font-black text-indigo-900">
-                    <span>相对极差 = </span>
-                    <div className="flex flex-col items-center">
-                      <span className="border-b-2 border-indigo-900 pb-1 px-4">最大值 - 最小值</span>
-                      <span className="pt-1">平均值</span>
-                    </div>
-                    <span> × 100%</span>
-                 </div>
-              </div>
-
               <div className="flex flex-col items-center justify-center p-8 bg-white rounded-3xl border border-indigo-100 shadow-sm">
                  <div className="flex flex-col items-center space-y-4">
                     <div className="flex items-center space-x-2 text-xl font-black text-indigo-900">
@@ -765,14 +717,14 @@ const Workflow: React.FC = () => {
               <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center">
                 <Sparkles className="w-3.5 h-3.5 mr-2 text-indigo-500" /> AI 智能初审意见
               </h4>
-              <span className={`px-2 py-1 ${titrationData.rsd < 0.5 && titrationData.relativeRange < 0.3 ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'} text-[8px] font-black rounded uppercase`}>
-                {titrationData.rsd < 0.5 && titrationData.relativeRange < 0.3 ? 'Pass' : 'Review Required'}
+              <span className={`px-2 py-1 ${titrationData.standardRsd < 0.5 && titrationData.rsd < 0.5 ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'} text-[8px] font-black rounded uppercase`}>
+                {titrationData.standardRsd < 0.5 && titrationData.rsd < 0.5 ? 'Pass' : 'Review Required'}
               </span>
             </div>
             <p className="text-xs text-slate-600 leading-relaxed font-medium">
-              平行实验精密度 (RSD) 为 {titrationData.rsd}%，相对极差为 {titrationData.relativeRange}%。
-              {titrationData.rsd < 0.5 && titrationData.relativeRange < 0.3 
-                ? '各项精密度指标均符合实验室质量控制要求（RSD ≤ 0.5%, 相对极差 ≤ 0.3%）。' 
+              标定实验精密度 (RSD) 为 {titrationData.standardRsd}%，测定实验精密度 (RSD) 为 {titrationData.rsd}%。
+              {titrationData.standardRsd < 0.5 && titrationData.rsd < 0.5 
+                ? '各项精密度指标均符合实验室质量控制要求（RSD ≤ 0.5%）。' 
                 : '结果偏差略大。建议检查滴定管读数、终点颜色判定是否一致，或重新进行平行测定。'}
               计算逻辑遵循莫尔法核心反应方程式 Ag⁺ + Cl⁻ → AgCl↓，结果归档有效。
             </p>
@@ -960,14 +912,13 @@ const Workflow: React.FC = () => {
               </tr>
             </tbody>
           </table>
-          <p style={{ fontSize: '14px' }}>平均值：<span style={{ fontWeight: 'bold' }}>{titrationData.result}%</span>， RSD：{titrationData.rsd}%， 相对极差：{titrationData.relativeRange}%</p>
+          <p style={{ fontSize: '14px' }}>平均值：<span style={{ fontWeight: 'bold' }}>{titrationData.result}%</span>， 标定 RSD：{titrationData.standardRsd}%， 测定 RSD：{titrationData.rsd}%</p>
         </section>
 
         <section style={{ marginBottom: '20px' }}>
           <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '10px' }}>六、实验结果</h2>
           <p style={{ fontSize: '14px', lineHeight: '1.6' }}>
             本次测定待测涂料中氯离子平均质量分数为 <span style={{ textDecoration: 'underline', fontWeight: 'bold', padding: '0 10px' }}>{titrationData.result}</span> %，
-            3组平行样相对极差为 <span style={{ textDecoration: 'underline', fontWeight: 'bold', padding: '0 10px' }}>{titrationData.relativeRange}</span> %，
             数据精准可靠，符合实验要求。
           </p>
         </section>
