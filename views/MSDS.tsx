@@ -3,13 +3,17 @@ import React, { useState } from 'react';
 import { 
   Search, ShieldAlert, AlertTriangle, Loader2, CheckCircle2, 
   ClipboardCheck, Thermometer, Wind, UserCheck, ChevronRight,
-  Info, Sparkles, FileText, CheckCircle, AlertCircle
+  Info, Sparkles, FileText, CheckCircle, AlertCircle, Play
 } from 'lucide-react';
 import { getSafetyDetails, checkCompatibility } from '../services/geminiService';
 import { getLocalSafetyInfo } from '../data/safetyDb';
 import { SafetyInfo, SafetySummary } from '../types';
 
-const MSDS: React.FC = () => {
+interface MSDSProps {
+  onStartWorkflow?: () => void;
+}
+
+const MSDS: React.FC<MSDSProps> = ({ onStartWorkflow }) => {
   const [activeTab, setActiveTab] = useState<'chemical' | 'assessment'>('chemical');
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
@@ -119,7 +123,7 @@ const MSDS: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold text-slate-800">安全防护中心</h2>
+        <h2 className="text-xl font-bold text-slate-800">智能实验评估中心</h2>
         <ShieldAlert className="w-6 h-6 text-rose-500" />
       </div>
 
@@ -309,11 +313,19 @@ const MSDS: React.FC = () => {
                   </div>
                 </div>
                 
-                <div className="mt-6 pt-6 border-t border-white/10 flex items-center justify-between">
-                  <p className="text-[9px] font-bold text-white/40 uppercase tracking-widest">
-                    <Info className="w-3 h-3 inline mr-1" /> 基于标准实验室安全协议生成
-                  </p>
-                  <Sparkles className="w-4 h-4 text-indigo-400 animate-pulse" />
+                <div className="mt-6 pt-6 border-t border-white/10 flex flex-col space-y-4">
+                  <button 
+                    onClick={onStartWorkflow}
+                    className="w-full py-4 bg-indigo-500 text-white rounded-2xl font-black shadow-lg shadow-indigo-500/20 hover:bg-indigo-400 transition-all active:scale-[0.98] flex items-center justify-center"
+                  >
+                    <Play className="w-4 h-4 mr-2" /> 进入实验流程
+                  </button>
+                  <div className="flex items-center justify-between">
+                    <p className="text-[9px] font-bold text-white/40 uppercase tracking-widest">
+                      <Info className="w-3 h-3 inline mr-1" /> 基于标准实验室安全协议生成
+                    </p>
+                    <Sparkles className="w-4 h-4 text-indigo-400 animate-pulse" />
+                  </div>
                 </div>
               </div>
             )}
@@ -459,13 +471,21 @@ const MSDS: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="pt-4 border-t border-slate-100 flex space-x-3">
-                     <button className="flex-1 py-3 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase flex items-center justify-center">
-                        <FileText className="w-3.5 h-3.5 mr-2" /> 保存为 PDF
+                  <div className="pt-4 border-t border-slate-100 flex flex-col space-y-3">
+                     <button 
+                       onClick={onStartWorkflow}
+                       className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black shadow-xl shadow-indigo-100 hover:bg-indigo-700 transition-all active:scale-[0.98] flex items-center justify-center"
+                     >
+                        <Play className="w-4 h-4 mr-2" /> 进入实验流程
                      </button>
-                     <button onClick={() => setAssessmentResult(null)} className="px-5 py-3 border border-slate-200 text-slate-400 rounded-xl text-[10px] font-black uppercase">
-                        重新评估
-                     </button>
+                     <div className="flex space-x-3">
+                       <button className="flex-1 py-3 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase flex items-center justify-center">
+                          <FileText className="w-3.5 h-3.5 mr-2" /> 保存为 PDF
+                       </button>
+                       <button onClick={() => setAssessmentResult(null)} className="px-5 py-3 border border-slate-200 text-slate-400 rounded-xl text-[10px] font-black uppercase">
+                          重新评估
+                       </button>
+                     </div>
                   </div>
                </div>
             </div>

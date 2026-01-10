@@ -23,7 +23,7 @@ const App: React.FC = () => {
       case ModuleType.ELN:
         return <ELN />;
       case ModuleType.SAFETY:
-        return <MSDS />;
+        return <MSDS onStartWorkflow={() => setActiveModule(ModuleType.WORKFLOW)} />;
       case ModuleType.WORKFLOW:
         return <Workflow />;
       default:

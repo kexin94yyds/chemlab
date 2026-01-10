@@ -14,7 +14,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeModule, setActiveModule
     { type: ModuleType.LIBRARY, icon: Library, label: '知识库' },
     { type: ModuleType.CALCULATOR, icon: Calculator, label: '计算' },
     { type: ModuleType.ELN, icon: BookOpen, label: '实验记录' },
-    { type: ModuleType.SAFETY, icon: ShieldAlert, label: '安全预警' },
+    { type: ModuleType.SAFETY, icon: ShieldAlert, label: '智能实验' },
   ];
 
   return (

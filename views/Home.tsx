@@ -33,8 +33,8 @@ const Home: React.FC<HomeProps> = ({ onNavigate }) => {
     },
     {
       type: ModuleType.SAFETY,
-      title: '安全中心',
-      desc: '混合禁忌预警，即时 MSDS 危害速查。',
+      title: '智能实验评估',
+      desc: '实验前安全自评与禁忌预警，确保操作合规。',
       icon: ShieldAlert,
       color: 'bg-rose-500',
     },

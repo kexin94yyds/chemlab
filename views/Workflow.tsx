@@ -5,8 +5,10 @@ import {
   CheckCircle2, AlertTriangle, ArrowRight, ArrowLeft, Beaker, 
   Thermometer, Wind, UserCheck, Zap, Info, Play, FileText,
   Lock, Unlock, Search, Camera, QrCode, Calculator, Save, Download,
-  Tag, Sparkles
+  Tag, Sparkles, Loader2
 } from 'lucide-react';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 import { SafetyInfo, SafetySummary } from '../types';
 import { getLocalSafetyInfo } from '../data/safetyDb';
 
@@ -23,8 +25,40 @@ const Workflow: React.FC = () => {
   const [stepIndex, setStepIndex] = useState(0);
   const [safetyConfirmed, setSafetyConfirmed] = useState(false);
   const [quizPassed, setQuizPassed] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   
-  // Data for Mohr Method
+  const exportPDF = async () => {
+    const element = document.getElementById('report-template');
+    if (!element) return;
+
+    // Temporarily show the template for capturing
+    const originalDisplay = element.style.display;
+    element.style.display = 'block';
+
+    try {
+      setIsExporting(true);
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff'
+      });
+      
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const imgProps = pdf.getImageProperties(imgData);
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`实验报告_${sampleInfo.name}_${new Date().toLocaleDateString()}.pdf`);
+    } catch (error) {
+      console.error('Export PDF failed:', error);
+    } finally {
+      element.style.display = originalDisplay;
+      setIsExporting(false);
+    }
+  };
   const reagents = ['硝酸银', '铬酸钾', '乙醇', '硝酸'];
   const [safetyData, setSafetyData] = useState<SafetyInfo[]>([]);
 
@@ -595,7 +629,7 @@ const Workflow: React.FC = () => {
 
   const renderResult = () => (
     <div className="space-y-6 animate-in fade-in slide-in-from-right-4">
-      <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
+      <div id="report-content" className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
         <h3 className="text-xl font-black text-slate-800 mb-6 flex items-center">
           <BarChart3 className="w-6 h-6 mr-3 text-emerald-500" /> 智能数据处理报告
         </h3>
@@ -727,8 +761,17 @@ const Workflow: React.FC = () => {
         </div>
 
         <div className="flex space-x-3 mt-8">
-          <button className="flex-1 py-4 bg-slate-900 text-white rounded-2xl font-black hover:bg-slate-800 transition-all flex items-center justify-center">
-            <Download className="w-4 h-4 mr-2" /> 导出报告 (PDF)
+          <button 
+            onClick={exportPDF}
+            disabled={isExporting}
+            className="flex-1 py-4 bg-slate-900 text-white rounded-2xl font-black hover:bg-slate-800 transition-all flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isExporting ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <Download className="w-4 h-4 mr-2" />
+            )}
+            {isExporting ? '导出中...' : '导出报告 (PDF)'}
           </button>
           <button 
             onClick={() => setCurrentStage(WorkflowStage.CLOSE)}
@@ -815,6 +858,108 @@ const Workflow: React.FC = () => {
       </div>
 
       {renderStageNav()}
+
+      {/* Hidden PDF Template */}
+      <div id="report-template" style={{ display: 'none', width: '800px', padding: '40px', background: 'white', color: 'black', fontFamily: 'SimSun, "STSong", "Songti SC", serif' }}>
+        <h1 style={{ textAlign: 'center', fontSize: '24px', fontWeight: 'bold', marginBottom: '30px' }}>涂料中氯离子含量测定实验报告</h1>
+        
+        <section style={{ marginBottom: '20px' }}>
+          <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '10px' }}>一、实验目的</h2>
+          <p style={{ fontSize: '14px', lineHeight: '1.6' }}>1. 掌握电位滴定法测定涂料中氯离子含量的操作流程，熟练使用电位滴定仪。</p>
+          <p style={{ fontSize: '14px', lineHeight: '1.6' }}>2. 准确测定待测涂料样品中氯离子质量分数，为涂料性能评估提供数据支撑。</p>
+          <p style={{ fontSize: '14px', lineHeight: '1.6' }}>3. 规范实验操作，提升数据处理与误差分析能力。</p>
+        </section>
+
+        <section style={{ marginBottom: '20px' }}>
+          <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '10px' }}>二、实验原理</h2>
+          <p style={{ fontSize: '14px', lineHeight: '1.6' }}>样品先通过超声、离心、过滤处理涂料，让其中的氯离子完全释放到溶液中；用硝酸调节溶液酸度，避免干扰离子影响。再用硝酸银标准溶液滴定，银离子与氯离子会生成不溶于水的氯化银沉淀，电位滴定仪会在反应终点时出现明显电位突变，记录此时硝酸银溶液的消耗量，就能算出氯离子含量。</p>
+          <div style={{ textAlign: 'center', margin: '15px 0', fontSize: '16px', fontWeight: 'bold' }}>
+            核心公式：w(Cl⁻) = [(V-V₀)×c×35.45] / m × 100 × 100%
+          </div>
+          <p style={{ fontSize: '12px', color: '#666' }}>（V-样品消耗标液体积，V₀-空白消耗标液体积，c-标液浓度，m-样品取样量，35.45-Cl⁻摩尔质量）</p>
+        </section>
+
+        <section style={{ marginBottom: '20px' }}>
+          <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '10px' }}>三、实验仪器与试剂</h2>
+          <h3 style={{ fontSize: '15px', fontWeight: 'bold', marginTop: '10px' }}>（一）实验仪器</h3>
+          <p style={{ fontSize: '14px' }}>自动电位滴定仪（配银电极+参比电极）、电子天平（0.1mg）、超声机、烧杯（250mL）、移液管（25mL）、容量瓶（100mL）、玻璃棒、洗瓶、离心机、过滤装置。</p>
+          <h3 style={{ fontSize: '15px', fontWeight: 'bold', marginTop: '10px' }}>（二）实验试剂</h3>
+          <p style={{ fontSize: '14px' }}>1. 硝酸银标液； 2. 硝酸溶液； 3. 去离子水； 4. 待测涂料样品、空白试样。</p>
+        </section>
+
+        <section style={{ marginBottom: '20px' }}>
+          <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '10px' }}>四、实验步骤</h2>
+          <p style={{ fontSize: '14px', lineHeight: '1.6' }}>1. 样品预处理：准确称取涂料样品5.0g（精确至0.0001g），超声处理10min（温度60℃），随后以5000rpm离心10min，取上清液过滤，收集滤液备用。</p>
+          <p style={{ fontSize: '14px', lineHeight: '1.6' }}>2. 空白实验：同步做空白预处理，除不加涂料样品外，其余步骤与样品一致，制得空白溶液。</p>
+          <p style={{ fontSize: '14px', lineHeight: '1.6' }}>3. 电位滴定准备：开启电位滴定仪，预热校准；取样品处理液于烧杯，加25ml去离子水，放入电极，搅拌均匀。</p>
+          <p style={{ fontSize: '14px', lineHeight: '1.6' }}>4. 滴定操作：用0.01mol/L硝酸银标液滴定，自动电位仪滴定，直至电位突变（终点），停止滴定，记录标液总消耗量V；同法滴定空白溶液，记录消耗量V₀。</p>
+          <p style={{ fontSize: '14px', lineHeight: '1.6' }}>5. 平行实验：同一样品重复测定3次，保证数据平行性。</p>
+        </section>
+
+        <section style={{ marginBottom: '20px' }}>
+          <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '10px' }}>五、实验数据记录与处理</h2>
+          <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '15px' }}>
+            <thead>
+              <tr style={{ background: '#f8f9fa' }}>
+                <th style={{ border: '1px solid #ddd', padding: '8px', fontSize: '13px' }}>项目</th>
+                <th style={{ border: '1px solid #ddd', padding: '8px', fontSize: '13px' }}>实验一</th>
+                <th style={{ border: '1px solid #ddd', padding: '8px', fontSize: '13px' }}>实验二</th>
+                <th style={{ border: '1px solid #ddd', padding: '8px', fontSize: '13px' }}>实验三</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style={{ border: '1px solid #ddd', padding: '8px', fontSize: '13px' }}>样品质量 m (g)</td>
+                <td colSpan={3} style={{ border: '1px solid #ddd', padding: '8px', fontSize: '13px', textAlign: 'center' }}>{titrationData.m_sample}</td>
+              </tr>
+              <tr>
+                <td style={{ border: '1px solid #ddd', padding: '8px', fontSize: '13px' }}>标液浓度 c (mol/L)</td>
+                <td colSpan={3} style={{ border: '1px solid #ddd', padding: '8px', fontSize: '13px', textAlign: 'center' }}>{titrationData.concentration}</td>
+              </tr>
+              <tr>
+                <td style={{ border: '1px solid #ddd', padding: '8px', fontSize: '13px' }}>空白体积 V₀ (mL)</td>
+                <td colSpan={3} style={{ border: '1px solid #ddd', padding: '8px', fontSize: '13px', textAlign: 'center' }}>{titrationData.v0}</td>
+              </tr>
+              <tr>
+                <td style={{ border: '1px solid #ddd', padding: '8px', fontSize: '13px' }}>滴定体积 V (mL)</td>
+                {titrationData.trials.map((t, i) => (
+                  <td key={i} style={{ border: '1px solid #ddd', padding: '8px', fontSize: '13px', textAlign: 'center' }}>{t.v || '--'}</td>
+                ))}
+              </tr>
+              <tr>
+                <td style={{ border: '1px solid #ddd', padding: '8px', fontSize: '13px' }}>测定结果 (%)</td>
+                {titrationData.trials.map((t, i) => (
+                  <td key={i} style={{ border: '1px solid #ddd', padding: '8px', fontSize: '13px', textAlign: 'center' }}>
+                    {t.v ? (((parseFloat(t.v) - parseFloat(titrationData.v0)) * parseFloat(titrationData.concentration) * 35.45) / (parseFloat(titrationData.m_sample) * 1000) * 100).toFixed(4) : '--'}
+                  </td>
+                ))}
+              </tr>
+            </tbody>
+          </table>
+          <p style={{ fontSize: '14px' }}>平均值：<span style={{ fontWeight: 'bold' }}>{titrationData.result}%</span>， RSD：{titrationData.rsd}%， 相对极差：{titrationData.relativeRange}%</p>
+        </section>
+
+        <section style={{ marginBottom: '20px' }}>
+          <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '10px' }}>六、实验结果</h2>
+          <p style={{ fontSize: '14px', lineHeight: '1.6' }}>
+            本次测定待测涂料中氯离子平均质量分数为 <span style={{ textDecoration: 'underline', fontWeight: 'bold', padding: '0 10px' }}>{titrationData.result}</span> %，
+            3组平行样相对极差为 <span style={{ textDecoration: 'underline', fontWeight: 'bold', padding: '0 10px' }}>{titrationData.relativeRange}</span> %，
+            数据精准可靠，符合实验要求。
+          </p>
+        </section>
+
+        <section>
+          <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '10px' }}>七、实验结论</h2>
+          <p style={{ fontSize: '14px', lineHeight: '1.6' }}>1. 采用电位滴定法，经“样品超声-离心-过滤-电位滴定”流程，可有效测定涂料中氯离子含量，操作简便、结果准确。</p>
+          <p style={{ fontSize: '14px', lineHeight: '1.6' }}>2. 待测涂料样品中氯离子质量分数为 <span style={{ textDecoration: 'underline', fontWeight: 'bold', padding: '0 10px' }}>{titrationData.result}</span> %，满足产品质量标准要求。</p>
+          <p style={{ fontSize: '14px', lineHeight: '1.6' }}>3. 实验过程中平行操作规范，数据平行性良好，实验符合定量分析要求。</p>
+        </section>
+
+        <div style={{ marginTop: '50px', textAlign: 'right', fontSize: '14px' }}>
+          <p>检测员：<span style={{ textDecoration: 'underline', padding: '0 20px' }}>{sampleInfo.operator}</span></p>
+          <p>日期：<span style={{ textDecoration: 'underline', padding: '0 20px' }}>{new Date().toLocaleDateString()}</span></p>
+        </div>
+      </div>
 
       {currentStage === WorkflowStage.PREP && renderPrep()}
       {currentStage === WorkflowStage.SAMPLE && renderSample()}
