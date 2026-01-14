@@ -1,4 +1,4 @@
-import { Client, Databases, ID, Query } from 'appwrite';
+import { Client, Databases, Storage, ID, Query } from 'appwrite';
 
 const client = new Client();
 
@@ -7,8 +7,10 @@ client
   .setProject('6943ecd3000728029c66');
 
 export const databases = new Databases(client);
+export const storage = new Storage(client);
 
 export const DATABASE_ID = '6943ed5f0008592ad9bc';
+export const BUCKET_ID = 'pdf_reports';
 
 // Collection IDs - 稍后创建
 export const COLLECTIONS = {

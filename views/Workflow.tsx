@@ -5,12 +5,14 @@ import {
   CheckCircle2, AlertTriangle, ArrowRight, ArrowLeft, Beaker, 
   Thermometer, Wind, UserCheck, Zap, Info, Play, FileText,
   Lock, Unlock, Search, Camera, QrCode, Calculator, Save, Download,
-  Tag, Sparkles, Loader2
+  Tag, Sparkles, Loader2, Share2, X
 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import { QRCodeSVG } from 'qrcode.react';
 import { SafetyInfo, SafetySummary } from '../types';
 import { getLocalSafetyInfo } from '../data/safetyDb';
+import { storage, BUCKET_ID, ID } from '../services/appwriteConfig';
 
 enum WorkflowStage {
   PREP = 'prep',
@@ -26,6 +28,9 @@ const Workflow: React.FC = () => {
   const [safetyConfirmed, setSafetyConfirmed] = useState(false);
   const [quizPassed, setQuizPassed] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [isGeneratingQR, setIsGeneratingQR] = useState(false);
+  const [showQRModal, setShowQRModal] = useState(false);
+  const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
   
   const exportPDF = async () => {
     const element = document.getElementById('report-template');
@@ -59,6 +64,50 @@ const Workflow: React.FC = () => {
       setIsExporting(false);
     }
   };
+
+  const generateShareQR = async () => {
+    const element = document.getElementById('report-template');
+    if (!element) return;
+
+    const originalDisplay = element.style.display;
+    element.style.display = 'block';
+
+    try {
+      setIsGeneratingQR(true);
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff'
+      });
+      
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const imgProps = pdf.getImageProperties(imgData);
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      
+      const pdfBlob = pdf.output('blob');
+      const fileName = `实验报告_${sampleInfo.name}_${Date.now()}.pdf`;
+      const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
+
+      const response = await storage.createFile(BUCKET_ID, ID.unique(), file);
+      
+      const fileUrl = `https://fra.cloud.appwrite.io/v1/storage/buckets/${BUCKET_ID}/files/${response.$id}/view?project=6943ecd3000728029c66`;
+      
+      setQrCodeUrl(fileUrl);
+      setShowQRModal(true);
+    } catch (error) {
+      console.error('Generate QR failed:', error);
+      alert('生成二维码失败，请检查网络连接或稍后重试');
+    } finally {
+      element.style.display = originalDisplay;
+      setIsGeneratingQR(false);
+    }
+  };
+
   const reagents = ['硝酸银', '铬酸钾', '乙醇', '硝酸'];
   const [safetyData, setSafetyData] = useState<SafetyInfo[]>([]);
 
@@ -745,6 +794,18 @@ const Workflow: React.FC = () => {
             {isExporting ? '导出中...' : '导出报告 (PDF)'}
           </button>
           <button 
+            onClick={generateShareQR}
+            disabled={isGeneratingQR}
+            className="py-4 px-6 bg-emerald-600 text-white rounded-2xl font-black hover:bg-emerald-700 transition-all flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isGeneratingQR ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <Share2 className="w-4 h-4 mr-2" />
+            )}
+            {isGeneratingQR ? '生成中...' : '分享二维码'}
+          </button>
+          <button 
             onClick={() => setCurrentStage(WorkflowStage.CLOSE)}
             className="flex-1 py-4 bg-indigo-600 text-white rounded-2xl font-black hover:bg-indigo-700 transition-all flex items-center justify-center"
           >
@@ -941,6 +1002,42 @@ const Workflow: React.FC = () => {
       {currentStage === WorkflowStage.OPERATION && renderOperation()}
       {currentStage === WorkflowStage.RESULT && renderResult()}
       {currentStage === WorkflowStage.CLOSE && renderClose()}
+
+      {showQRModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl animate-in fade-in zoom-in-95">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-black text-slate-800">扫码下载报告</h3>
+              <button 
+                onClick={() => setShowQRModal(false)}
+                className="p-2 hover:bg-slate-100 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5 text-slate-400" />
+              </button>
+            </div>
+            
+            <div className="flex flex-col items-center">
+              <div className="bg-white p-4 rounded-2xl border-2 border-slate-100 shadow-inner mb-4">
+                <QRCodeSVG 
+                  value={qrCodeUrl} 
+                  size={200}
+                  level="H"
+                  includeMargin={true}
+                />
+              </div>
+              
+              <p className="text-xs text-slate-500 text-center mb-4">
+                扫描二维码即可下载 PDF 报告
+              </p>
+              
+              <div className="flex items-center space-x-2 text-[10px] text-amber-600 bg-amber-50 px-3 py-2 rounded-full">
+                <Info className="w-3 h-3" />
+                <span>链接有效期 7 天</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
