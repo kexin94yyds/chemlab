@@ -10,7 +10,7 @@ export const databases = new Databases(client);
 export const storage = new Storage(client);
 
 export const DATABASE_ID = '6943ed5f0008592ad9bc';
-export const BUCKET_ID = 'pdf_reports';
+export const BUCKET_ID = '6966e21800150210f987';
 
 // Collection IDs - 稍后创建
 export const COLLECTIONS = {
